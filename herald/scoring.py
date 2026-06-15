@@ -1,23 +1,29 @@
 """
-scoring.py — Simple peptide feature calculations for HERALD.
+scoring.py — Simple peptide feature and baseline scoring calculations for HERALD.
 
-This module computes first-pass peptide properties that are relevant for
-screening hydrolysis products for AMP-like behavior. These features are
-intended to provide a transparent, rule-based starting point before adding
-more advanced AMP predictors or machine-learning models.
+This module computes first-pass peptide properties relevant for screening
+hydrolysis products for AMP-like behavior. These features provide a transparent,
+rule-based starting point before adding more advanced AMP predictors or
+machine-learning models.
 
-Current features include:
+Current outputs include:
     - Peptide length
     - Approximate net charge
     - Hydrophobic residue fraction
     - Aromatic residue fraction
+    - Simple rule-based AMP-like score
 
 The calculations use simple residue-count approximations based on standard
-one-letter amino-acid codes. These values are useful for initial ranking and
-exploratory analysis, but they are not full physicochemical models. In later
-versions, these functions may be replaced or supplemented with pH-dependent
-charge calculations, hydrophobicity scales, or external peptide-property
-prediction tools.
+one-letter amino-acid codes. The simple AMP-like score is an exploratory
+baseline that rewards broad properties commonly associated with antimicrobial
+peptides, including moderate length, positive charge, moderate hydrophobicity,
+and aromatic content.
+
+These values are useful for initial ranking and exploratory analysis, but they
+are not validated predictors of antimicrobial activity. In later versions, these
+functions may be replaced or supplemented with pH-dependent charge calculations,
+hydrophobicity scales, curated AMP database models, external peptide-property
+prediction tools, and experimental validation.
 """
 
 POSITIVE_RESIDUES = {"K", "R", "H"}
@@ -81,6 +87,41 @@ def aromatic_fraction(peptide):
     return count / len(peptide)
 
 
+def simple_amp_score(peptide):
+    """
+    Compute a simple rule-based AMP-like score.
+
+    This score is an exploratory heuristic, not a trained AMP predictor.
+    The thresholds reward broad AMP-like properties reported in the peptide
+    design literature, including moderate length, positive charge, moderate
+    hydrophobicity, and aromatic content. These thresholds should be refined
+    later using AMP databases and experimental validation.
+    """
+    peptide = peptide.upper()
+    score = 0
+
+    length = len(peptide)
+    charge = net_charge(peptide)
+    hydrophobicity = hydrophobic_fraction(peptide)
+    aromaticity = aromatic_fraction(peptide)
+
+    if 8 <= length <= 30:
+        score += 1
+
+    if charge >= 1:
+        score += 1
+    if charge >= 2:
+        score += 1
+
+    if 0.3 <= hydrophobicity <= 0.7:
+        score += 1
+
+    if aromaticity > 0:
+        score += 1
+
+    return score
+
+
 def peptide_features(peptide):
     """
     Compute simple AMP-relevant features for a peptide.
@@ -92,4 +133,5 @@ def peptide_features(peptide):
         "net_charge": net_charge(peptide),
         "hydrophobic_fraction": hydrophobic_fraction(peptide),
         "aromatic_fraction": aromatic_fraction(peptide),
+        "simple_amp_score": simple_amp_score(peptide),
     }
