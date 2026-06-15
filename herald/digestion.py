@@ -37,7 +37,6 @@ def digest_sequence(sequence, enzyme_name, min_length=4, max_length=50):
             cut_sites.append(i + 1)
 
     cut_sites = [0] + cut_sites + [len(sequence)]
-    # print(cut_sites)
 
     peptides = []
     for i in range(len(cut_sites) - 1):
