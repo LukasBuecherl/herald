@@ -58,46 +58,32 @@ def screen_combinations(
                 sequence, enzyme_name, min_length=min_length, max_length=max_length
             )
 
-            features = []
-            for peptide in peptides:
-                features.append(peptide_features(peptide))
-
-            scores = []
-            for feature in features:
-                scores.append(feature["simple_amp_score"])
+            features = [peptide_features(peptide) for peptide in peptides]
+            scores = [feature["simple_amp_score"] for feature in features]
 
             if len(scores) == 0:
                 continue
 
             top_score = max(scores)
-            top_index = scores.index(top_score)
-            top_peptide = peptides[top_index]
-
-            num_score_ge_3 = 0
-            num_score_ge_4 = 0
-            for score in scores:
-                if score >= 3:
-                    num_score_ge_3 += 1
-                if score >= 4:
-                    num_score_ge_4 += 1
-
+            top_peptide = peptides[scores.index(top_score)]
+            num_score_ge_3 = sum(1 for score in scores if score >= 3)
+            num_score_ge_4 = sum(1 for score in scores if score >= 4)
             avg_score = sum(scores) / len(scores)
 
-            summary = {
-                "protein": protein_name,
-                "accession_id": accession_id,
-                "enzyme": enzyme_name,
-                "min_length": min_length,
-                "max_length": max_length,
-                "num_peptides": len(peptides),
-                "max_score": top_score,
-                "top_peptide": top_peptide,
-                "num_score_ge_3": num_score_ge_3,
-                "num_score_ge_4": num_score_ge_4,
-                "avg_score": avg_score,
-            }
+            results.append(
+                {
+                    "protein": protein_name,
+                    "accession_id": accession_id,
+                    "enzyme": enzyme_name,
+                    "min_length": min_length,
+                    "max_length": max_length,
+                    "num_peptides": len(peptides),
+                    "max_score": top_score,
+                    "top_peptide": top_peptide,
+                    "num_score_ge_3": num_score_ge_3,
+                    "num_score_ge_4": num_score_ge_4,
+                    "avg_score": avg_score,
+                }
+            )
 
-            results.append(summary)
-
-    results_df = pd.DataFrame(results)
-    return results_df
+    return pd.DataFrame(results)
