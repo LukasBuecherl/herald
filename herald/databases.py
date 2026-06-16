@@ -136,7 +136,13 @@ def build_amp_database():
     else:
         amp_database = pd.concat([dbaasp_df, apd6_df], ignore_index=True)
 
+    amp_database["sequence"] = amp_database["sequence"].str.upper()
     amp_database = amp_database.drop_duplicates(subset=["sequence"])
+    amp_database = amp_database[
+        amp_database["sequence"].str.match("^[ACDEFGHIKLMNPQRSTVWY]+$")
+    ]
+    amp_database = amp_database[amp_database["sequence"].str.len() >= 4]
+
     output_path = os.path.join(DATA_DIR_PROCESSED, "amp_database.csv")
     amp_database.to_csv(output_path, index=False)
     return amp_database
