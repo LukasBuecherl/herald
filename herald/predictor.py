@@ -15,10 +15,11 @@ experimentally confirmed non-antimicrobial peptides.
 import os
 import random
 
-import esm
+import joblib
 import numpy as np
 import pandas as pd
 import torch
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -141,3 +142,20 @@ def compute_esm2_embeddings(sequences, model, alphabet, batch_size=32):
 
     # stack list of (320,) arrays into a single (n_sequences, 320) matrix
     return np.array(all_embeddings)
+
+
+def train_classifier(embeddings, labels):
+    """
+    Train a logistic regression classifier on ESM-2 peptide embeddings.
+    Args:
+        embeddings (numpy.ndarray): Array of shape (n_sequences, 320)
+            containing ESM-2 embeddings for each peptide.
+        labels (numpy.ndarray): Binary labels where 1 = AMP and 0 = negative.
+    Returns:
+        sklearn.linear_model.LogisticRegression: Fitted classifier saved
+        to data/processed/amp_classifier.pkl.
+    """
+    clf = LogisticRegression(max_iter=1000)
+    clf.fit(embeddings, labels)
+    joblib.dump(clf, os.path.join(DATA_DIR_PROCESSED, "amp_classifier.pkl"), compress=3)
+    return clf
