@@ -26,6 +26,8 @@ hydrophobicity scales, curated AMP database models, external peptide-property
 prediction tools, and experimental validation.
 """
 
+from herald.predictor import predict_amp
+
 POSITIVE_RESIDUES = {"K", "R", "H"}
 NEGATIVE_RESIDUES = {"D", "E"}
 HYDROPHOBIC_RESIDUES = {"A", "V", "I", "L", "M", "F", "W", "Y"}
@@ -135,3 +137,24 @@ def peptide_features(peptide):
         "aromatic_fraction": aromatic_fraction(peptide),
         "simple_amp_score": simple_amp_score(peptide),
     }
+
+
+def peptide_features_ml(peptide, model, alphabet, clf):
+    """
+    Compute peptide features including ML-based AMP probability.
+    Extends peptide_features() with ESM-2 embedding and logistic
+    regression predictions from a pretrained AMP classifier.
+    Args:
+        peptide (str): Amino acid sequence to evaluate.
+        model: Pretrained ESM-2 model.
+        alphabet: ESM-2 alphabet object used for tokenization.
+        clf: Fitted logistic regression classifier.
+    Returns:
+        dict: Feature dictionary containing all fields from peptide_features()
+        plus amp_probability (float) and amp_prediction (int, 1=AMP, 0=not AMP).
+    """
+    features = peptide_features(peptide)
+    prob_pred = predict_amp(features["sequence"], model, alphabet, clf)
+    features["amp_probability"] = prob_pred[1]
+    features["amp_prediction"] = prob_pred[0]
+    return features

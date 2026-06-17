@@ -159,3 +159,58 @@ def train_classifier(embeddings, labels):
     clf.fit(embeddings, labels)
     joblib.dump(clf, os.path.join(DATA_DIR_PROCESSED, "amp_classifier.pkl"), compress=3)
     return clf
+
+
+def predict_amp(sequence, model, alphabet, clf):
+    """
+    Predict whether a peptide sequence is antimicrobial.
+
+    Args:
+        sequence (str): Amino acid sequence to evaluate.
+        model: Pretrained ESM-2 model.
+        alphabet: ESM-2 alphabet object used for tokenization.
+        clf: Fitted logistic regression classifier.
+
+    Returns:
+        tuple: (prediction, probability) where prediction is 1 (AMP) or 0 (not AMP)
+        and probability is the confidence score between 0 and 1.
+    """
+    embedding = compute_esm2_embeddings([sequence], model, alphabet)
+    prediction = clf.predict(embedding)[0]
+    probability = float(clf.predict_proba(embedding)[0, 1])
+    return prediction, probability
+
+
+# Test function
+if __name__ == "__main__":
+    import esm
+    from sklearn.metrics import classification_report, roc_auc_score
+
+    # load data
+    amp_df = pd.read_csv(os.path.join(DATA_DIR_PROCESSED, "amp_database.csv"))
+
+    # prepare dataset
+    X_train, X_test, y_train, y_test = prepare_dataset(amp_df, n_samples=18000)
+
+    # load ESM-2
+    model, alphabet = esm.pretrained.esm2_t6_8M_UR50D()
+
+    # compute embeddings
+    print("Computing training embeddings...")
+    X_train_emb = compute_esm2_embeddings(X_train.tolist(), model, alphabet)
+    print("Computing test embeddings...")
+    X_test_emb = compute_esm2_embeddings(X_test.tolist(), model, alphabet)
+
+    # train
+    print("Training classifier...")
+    clf = train_classifier(X_train_emb, y_train)
+
+    # test a known AMP
+    pred, prob = predict_amp("GIGKFLKKAKKFGKAFVKILKK", model, alphabet, clf)
+    print(f"Prediction: {pred}, Probability: {prob:.3f}")
+
+    y_pred = clf.predict(X_test_emb)
+    y_prob = clf.predict_proba(X_test_emb)[:, 1]
+
+    print(classification_report(y_test, y_pred))
+    print(f"ROC-AUC: {roc_auc_score(y_test, y_prob):.3f}")
