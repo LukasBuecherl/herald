@@ -15,7 +15,11 @@ experimentally confirmed non-antimicrobial peptides.
 import os
 import random
 
+import esm
+import numpy as np
 import pandas as pd
+import torch
+from sklearn.model_selection import train_test_split
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR_PROCESSED = os.path.join(BASE_DIR, "data", "processed")
@@ -50,3 +54,90 @@ def generate_negative_samples(amp_df, n_samples):
 
 amp_df = pd.read_csv(os.path.join(DATA_DIR_PROCESSED, "amp_database.csv"))
 print(generate_negative_samples(amp_df, 5))
+
+
+def prepare_dataset(amp_df, n_samples):
+    """
+    Prepare a dataset by generating negative samples and combining with AMP data.
+    Args:
+        amp_df (pandas.DataFrame): AMP database containing a "sequence" column.
+        n_samples (int): Number of synthetic negative sequences to generate.
+    Returns:
+        tuple: x_train, x_test, y_train, y_test as pandas Series,
+            where x contains sequences and y contains binary labels (1=AMP, 0=negative).
+    """
+    amp_df = amp_df.copy()
+    amp_df["label"] = 1
+    df_neg = generate_negative_samples(amp_df, n_samples)
+    df_neg["label"] = 0
+    df_all = pd.concat([amp_df, df_neg])
+
+    x = df_all["sequence"]
+    y = df_all["label"]
+    x_train, x_test, y_train, y_test = train_test_split(
+        x,
+        y,
+        test_size=0.2,
+        random_state=42,
+        shuffle=True,
+    )
+
+    return x_train, x_test, y_train, y_test
+
+
+def compute_esm2_embeddings(sequences, model, alphabet, batch_size=32):
+    """
+    Compute ESM-2 sequence embeddings for a list of peptide sequences.
+
+    Each sequence is tokenized and passed through the ESM-2 transformer model.
+    Per-token representations from the final layer are mean-pooled across the
+    sequence length to produce a single fixed-size embedding per peptide.
+
+    Args:
+        sequences (list[str]): List of amino acid sequences to embed.
+        model: Pretrained ESM-2 model loaded via esm.pretrained.
+        alphabet: ESM-2 alphabet object used for tokenization.
+        batch_size (int): Number of sequences to process per batch.
+
+    Returns:
+        numpy.ndarray: Array of shape (n_sequences, 320) containing
+        one embedding vector per input sequence.
+    """
+    # use Apple Silicon GPU if available, otherwise fall back to CPU
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = model.to(device)
+    model.eval()
+
+    # batch converter tokenizes sequences into numerical tokens for ESM-2
+    batch_converter = alphabet.get_batch_converter()
+
+    all_embeddings = []
+
+    # process sequences in batches to avoid running out of memory
+    for start in range(0, len(sequences), batch_size):
+        batch = sequences[start : start + batch_size]
+
+        # ESM-2 expects (label, sequence) tuples — use index as label
+        data = [(str(j), seq) for j, seq in enumerate(batch)]
+
+        # tokenize batch — discard labels and strings, keep tokens only
+        _, _, batch_tokens = batch_converter(data)
+        batch_tokens = batch_tokens.to(device)
+
+        # run through ESM-2 without computing gradients (inference only)
+        with torch.no_grad():
+            results = model(batch_tokens, repr_layers=[6])
+
+        # extract layer 6 representations — shape: (batch_size, seq_len+2, 320)
+        token_embeddings = results["representations"][6]
+
+        for i, (_, seq) in enumerate(data):
+            L = len(seq)
+            # slice 1:L+1 to skip START and END special tokens
+            # mean(0) averages across sequence length → shape (320,)
+            embedding = token_embeddings[i, 1 : L + 1].mean(0)
+            # move to CPU and convert to numpy for scikit-learn compatibility
+            all_embeddings.append(embedding.cpu().numpy())
+
+    # stack list of (320,) arrays into a single (n_sequences, 320) matrix
+    return np.array(all_embeddings)
