@@ -1,37 +1,57 @@
-class HERALDEnvironment:
+from mimetypes import inited
 
-     # Defining the __init__ method
+from torch._functorch.vmap import in_dims_t
+
+
+class HERALDEnvironment:
+    # Defining the __init__ method
     def __init__(self, protein_name, protein_sequence, model, alphabet, clf):
 
-    # Fixed for an episode
-    protein_name      # which protein we're working with
-    protein_sequence  # its amino acid sequence
+        # Fixed for an episode
+        self.protein_name = protein_name
+        self.protein_sequence = protein_sequence
+        self.model = model
+        self.alphabet = alphabet
+        self.clf = clf
 
-    # Available choices
-    enzyme_options    # all enzymes the agent can choose from
+        # Available choices
+        self.action_space = [
+            ["trypsin"],
+            ["chymotrypsin"],
+            ["trypsin", "chymotrypsin"],
+            ["chymotrypsin", "trypsin"],
+        ]
 
-    # Conditions (optional for now, important later)
-    ph               # hydrolysis pH
-    temperature      # hydrolysis temperature
+        # Conditions (optional for now, important later)
+        self.ph = 7.0
+        self.temperature = 37.0
 
-    # History — what's been tried this episode
-    tried_combinations   # list of enzyme combos already tested
-    rewards_history      # rewards received for each
+        # History — what's been tried this episode
+        self.tried_combinations = []
+        self.rewards_history = []
 
-    # Current state
-    current_step      # how many actions taken so far
-    max_steps         # maximum actions per episode
+        # Current state
+        self.current_step = 0
+        self.max_steps = len(self.action_space) * 3
 
-    def reset():
-        # start a new episode
-        # return the initial state
+    def reset(self):
+        self.tried_combinations = []
+        self.rewards_history = []
+        self.current_step = 0
 
-    def step(action):
-        # agent chose an enzyme combination
-        # run digestion with that combination
-        # score the peptides
-        # calculate reward
-        # return (new_state, reward, done)
+        initialstate = {
+            "protein_name": self.protein_name,
+            "action_space_size": len(self.action_space),
+            "tried_combinations": self.tried_combinations,
+            "rewards_history": self.rewards_history,
+            "current_step": self.current_step,
+            "max_steps": self.max_steps,
+        }
 
-    def render():
-        # optional — print what's happening for debugging
+        return initialstate
+
+    def step(self, action):
+        pass
+
+    def render(self):
+        pass
