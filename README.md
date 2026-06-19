@@ -1,22 +1,34 @@
 # HERALD
 ### Hydrolysis-guided Enzymatic Reinforcement for AMP Learning and Discovery
 
-HERALD is a computational pipeline for machine learning-guided discovery of *antimicrobial peptides* (AMPs) from food proteins. It combines in silico enzymatic digestion, ESM-2 protein language model embeddings, and reinforcement learning to identify enzyme combinations that maximize the yield of AMP-like peptides from whey proteins.
+HERALD is a computational pipeline for machine learning-guided discovery of 
+*antimicrobial peptides* (AMPs) from food proteins. It combines in silico 
+enzymatic digestion, ESM-2 protein language model embeddings, and reinforcement 
+learning to identify enzyme combinations that maximize the yield of AMP-like 
+peptides from whey proteins.
 
-The pipeline is designed as a closed computational–experimental loop: 
-computational predictions prioritize candidates for wet lab validation, and experimental results refine the model for the next iteration.
+The pipeline is designed as a closed computational–experimental loop:
+computational predictions prioritize candidates for wet lab validation, and
+experimental results refine the model for the next iteration.
 
 ---
 
 ## Motivation
 
-Antibiotic resistance is a growing global health crisis. Antimicrobial peptides derived from food proteins represent a promising class of natural alternatives. However, identifying which enzymes and hydrolysis conditions produce the most potent AMP-like fragments from proteins like whey is a combinatorially large problem that is impractical to solve by wet lab experimentation alone.
+Antibiotic resistance is a growing global health crisis. Antimicrobial peptides
+derived from food proteins represent a promising class of natural alternatives.
+However, identifying which enzymes and hydrolysis conditions produce the most
+potent AMP-like fragments from proteins like whey is a combinatorially large
+problem that is impractical to solve by wet lab experimentation alone.
 
-HERALD addresses this by using machine learning to prioritize the most promising enzyme combinations computationally, reducing the experimental search space to a tractable set of high-confidence candidates.
+HERALD addresses this by using machine learning to prioritize the most promising
+enzyme combinations computationally, reducing the experimental search space to
+a tractable set of high-confidence candidates.
 
 ---
 
 ## Pipeline Overview
+
 ```mermaid
 flowchart TD
     A[Whey Protein Sequences\nUniProt] --> B[In Silico Enzymatic Digestion\ncleavage rules from\nMEROPS/BRENDA]
@@ -31,37 +43,46 @@ flowchart TD
 ---
 
 ## Project Structure
+
 HERALD/
 
-├── herald/                        # core pipeline modules
+├── herald/                         # core pipeline modules
 
-│   ├── proteins.py                # UniProt sequence fetching and caching
+│   ├── proteins.py                 # UniProt sequence fetching and caching
 
-│   ├── enzymes.py                 # enzyme cleavage rules and properties
+│   ├── enzymes.py                  # enzyme cleavage rules and properties
 
-│   ├── digestion.py               # in silico enzymatic digestion
+│   ├── digestion.py                # in silico enzymatic digestion
 
-│   ├── scoring.py                 # peptide feature and AMP scoring functions
+│   ├── scoring.py                  # peptide feature and AMP scoring functions
 
-│   ├── screening.py               # protein-enzyme screening workflow
+│   ├── screening.py                # protein-enzyme screening workflow
 
-│   ├── databases.py               # AMP database retrieval and preprocessing
+│   ├── databases.py                # AMP database retrieval and preprocessing
 
-│   └── predictor.py               # ESM-2 embeddings and AMP classifier
+│   ├── predictor.py                # ESM-2 embeddings and AMP classifier
+
+│   ├── environment.py              # reinforcement learning environment
+
+│   ├── agent.py                    # epsilon-greedy RL agent
+
+│   └── training.py                 # RL training loop
 
 ├── notebooks/
 
-│   ├── 01_digestion_exploration.ipynb    # single protein-enzyme walkthrough
+│   ├── 01_digestion_exploration.ipynb     # single protein-enzyme walkthrough
 
-│   ├── 02_enzyme_protein_screening.ipynb # rule-based screening pipeline
+│   ├── 02_enzyme_protein_screening.ipynb  # rule-based screening pipeline
 
-│   └── 03_ml_screening.ipynb            # ML-based screening pipeline
+│   ├── 03_ml_screening.ipynb             # ML-based screening pipeline
+
+│   └── 04_rl_training.ipynb             # RL enzyme combination optimization
 
 ├── data/
 
-│   ├── raw/                       # downloaded sequences and database files
+│   ├── raw/                        # downloaded sequences and database files
 
-│   └── processed/                 # cleaned datasets and model outputs
+│   └── processed/                  # cleaned datasets and model outputs
 
 ├── requirements.txt
 
@@ -89,17 +110,17 @@ pip install -r requirements.txt
 ---
 
 ## Dependencies
-- torch
-- transformers
-- fair-esm
-- scikit-learn
-- pandas
-- numpy
-- biopython
-- requests
-- joblib
-- matplotlib
-- jupyter
+
+torch
+fair-esm
+scikit-learn
+pandas
+numpy
+biopython
+requests
+joblib
+matplotlib
+jupyter
 
 ---
 
@@ -114,12 +135,17 @@ Downloaded automatically on first run via the UniProt REST API.
 
 Citation: Wang et al., Nucleic Acids Research, 2016 (APD3); 2024 update (APD6)
 
-
 **DBAASP (Database of Antimicrobial Activity and Structure of Peptides)**
 Must be downloaded manually from https://dbaasp.org/search and placed in data/raw/.
 Download all segments as CSV files named peptides_0_2000.csv, peptides_2000_4000.csv, etc.
 
 Citation: Pirtskhalava et al., Antimicrobial Agents and Chemotherapy, 2021
+
+After downloading DBAASP files, build the combined database by running:
+```python
+from herald.databases import build_amp_database
+amp_df = build_amp_database()
+```
 
 ---
 
@@ -140,12 +166,18 @@ Trains an ESM-2 + logistic regression AMP classifier and runs ML-based screening
 Produces ml_screening_results.csv in data/processed/.
 On first run, classifier training takes approximately 10-20 minutes on Apple Silicon.
 
+**Notebook 04 — RL Optimization**
+Trains an epsilon-greedy agent to learn the optimal enzyme combination for
+lactoferrin hydrolysis. Produces a learning curve and ranked candidate peptides
+for wet lab validation. Produces rl_candidates.csv in data/processed/.
+
 ---
 
 ## Classifier Performance
 
-The AMP classifier was trained on 17,897 validated AMPs from APD6 and DBAASP 
-(positive examples) and 18,000 randomly generated peptide sequences (negative examples).
+The AMP classifier was trained on 17,897 validated AMPs from APD6 and DBAASP
+(positive examples) and 18,000 randomly generated peptide sequences (negative
+examples).
 
 | Metric | Value |
 |---|---|
@@ -161,7 +193,7 @@ Evaluated on a held-out test set of 7,180 sequences (80/20 train/test split).
 
 ## Key Results
 
-Top protein-enzyme combinations ranked by ML-predicted AMP probability:
+**ML Screening — Top protein-enzyme combinations (notebook 03):**
 
 | Protein | Enzyme | Top Peptide | AMP Probability |
 |---|---|---|---|
@@ -170,21 +202,42 @@ Top protein-enzyme combinations ranked by ML-predicted AMP probability:
 | Alpha-lactalbumin | Trypsin | FFVPLFLVGILFPAILAK | 0.9982 |
 | BSA | Trypsin | GACLLPK | 0.9935 |
 
-These candidates are prioritized for wet lab validation including MIC assays 
-against gram-positive and gram-negative bacterial strains.
+**RL Optimization — Agent recommendation (notebook 04):**
+
+The epsilon-greedy agent converged on **trypsin alone** as the optimal enzyme
+for lactoferrin hydrolysis after 100 training episodes.
+
+| Action | Estimated Reward |
+|---|---|
+| Trypsin | 0.857 ← recommended |
+| Chymotrypsin | 0.846 |
+| Trypsin → Chymotrypsin | 0.822 |
+| Chymotrypsin → Trypsin | 0.822 |
+
+**Priority candidates for wet lab validation:**
+
+| Peptide | AMP Probability | Evidence |
+|---|---|---|
+| LFVPALLSLGALGLCLAAPR | 0.9997 | ML screening + RL optimization |
+| QVLLHQQALFGK | 0.9759 | Rule-based + ML screening + RL optimization |
+| DSALGFLR | 0.9890 | RL optimization |
+
+`QVLLHQQALFGK` is the most cross-validated candidate — identified independently
+by rule-based scoring, ML screening, and RL optimization.
 
 ---
 
 ## Known Limitations
 
-- Negative training examples are randomly generated peptide sequences rather 
-  than experimentally validated non-AMP peptides. This is a common baseline 
+- Negative training examples are randomly generated peptide sequences rather
+  than experimentally validated non-AMP peptides. This is a common baseline
   approach in AMP classification literature and will be refined in future versions.
-- Digestion currently simulates single-enzyme hydrolysis. Sequential multi-enzyme 
-  digestion is under development.
-- Experimental conditions (pH, temperature) are stored in enzyme definitions 
-  but not yet incorporated into digestion simulation. Kinetic modeling of 
+- Experimental conditions (pH, temperature) are stored in enzyme definitions
+  but not yet incorporated into digestion simulation. Kinetic modeling of
   condition-dependent activity is planned.
+- The RL agent currently uses ESM-2 AMP probability as a proxy reward signal.
+  Wet lab MIC values will replace this signal in the next iteration to close
+  the computational-experimental loop.
 - Wet lab validation of computational predictions is ongoing.
 
 ---
@@ -192,14 +245,17 @@ against gram-positive and gram-negative bacterial strains.
 ## Roadmap
 
 - [x] In silico digestion pipeline
+- [x] Sequential multi-enzyme digestion
 - [x] Rule-based AMP scoring
 - [x] AMP database integration (APD6, DBAASP)
-- [x] ESM-2 embedding and classifier
+- [x] ESM-2 embedding and classifier (97% accuracy, ROC-AUC 0.996)
 - [x] ML-based screening pipeline
-- [ ] Sequential multi-enzyme digestion
+- [x] Reinforcement learning optimization loop
 - [ ] pH and temperature activity modeling
-- [ ] Reinforcement learning optimization loop
 - [ ] Wet lab validation and model recalibration
+- [ ] Expanded enzyme library (alcalase, neutrase, pepsin, papain)
+- [ ] UniProt-derived negative examples for classifier retraining
+- [ ] LLM policy upgrade for RL agent (Level 2)
 - [ ] bioRxiv preprint
 
 ---
@@ -207,7 +263,8 @@ against gram-positive and gram-negative bacterial strains.
 ## Citation
 
 If you use HERALD in your research, please cite: 
-Buecherl, L. (2025). HERALD: Hydrolysis-guided Enzymatic Reinforcement for AMP Learning and Discovery. bioRxiv. [preprint] - NOT OUT YET
+
+Buecherl, L. (2025). HERALD: Hydrolysis-guided Enzymatic Reinforcement for AMP Learning and Discovery. bioRxiv. [preprint — forthcoming]
 
 ---
 
@@ -219,7 +276,7 @@ MIT License — see LICENSE for details.
 
 ## Acknowledgements
 
-AMP database resources: APD6 (University of Nebraska Medical Center) 
+AMP database resources: APD6 (University of Nebraska Medical Center)
 and DBAASP (Tbilisi State University).
 
 ESM-2 protein language model: Meta AI Research.
