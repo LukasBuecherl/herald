@@ -34,4 +34,28 @@ ENZYME_RULES = {
         "source": "bovine pancreas",
         "food_grade": True,
     },
+    "alcalase": {
+        "cleaves_after": ["F", "L", "Y", "A", "V", "I", "M"],
+        "not_before": [],
+        "ph_optimum": 8.0,
+        "temp_optimum_celsius": 55,
+        "source": "Bacillus licheniformis",
+        "food_grade": True,
+    },
+    "papain": {
+        "cleaves_after": ["R", "K", "F", "Y", "L", "V", "A"],
+        "not_before": [],
+        "ph_optimum": 6.5,
+        "temp_optimum_celsius": 60,
+        "source": "Carica papaya",
+        "food_grade": True,
+    },
+    "bromelain": {
+        "cleaves_after": ["R", "K", "A", "Y", "G", "V"],
+        "not_before": [],
+        "ph_optimum": 7.0,
+        "temp_optimum_celsius": 50,
+        "source": "Ananas comosus",
+        "food_grade": True,
+    },
 }
