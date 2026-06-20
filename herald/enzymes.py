@@ -1,10 +1,8 @@
 """
 enzymes.py — Enzyme cleavage rules and properties for HERALD.
-
 Defines ENZYME_RULES, a lookup table of cleavage specificity,
 optimal conditions, and metadata for each protease used in the
 in silico digestion pipeline.
-
 Each entry contains:
     cleaves_after (list): Amino acids after which the enzyme cuts
     not_before (list): Amino acids that block cleavage at the next position
@@ -66,3 +64,17 @@ ENZYME_RULES = {
         "food_grade": True,
     },
 }
+
+
+def get_conditions(enzyme_names):
+    """
+    Extract optimal pH and temperature for an enzyme combination
+    from ENZYME_RULES. For sequential combinations, returns lists.
+    """
+    if len(enzyme_names) == 1:
+        enzyme = ENZYME_RULES[enzyme_names[0]]
+        return enzyme["ph_optimum"], enzyme["temp_optimum_celsius"]
+    else:
+        ph = [ENZYME_RULES[e]["ph_optimum"] for e in enzyme_names]
+        temp = [ENZYME_RULES[e]["temp_optimum_celsius"] for e in enzyme_names]
+        return ph, temp
