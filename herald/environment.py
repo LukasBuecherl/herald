@@ -24,7 +24,7 @@ class HERALDEnvironment:
     Models the enzymatic hydrolysis of a whey protein as a sequential
     decision-making problem. At each step the agent selects an enzyme
     combination, the environment simulates digestion, scores the resulting
-    peptides using an ESM-2 AMP classifier, and returns a reward signal.s
+    peptides using an ESM-2 AMP classifier, and returns a reward signal.
     The action space consists of single and sequential enzyme combinations
     drawn from food-grade proteases defined in enzymes.py. The reward
     combines average and maximum AMP probability across all peptides produced
@@ -33,24 +33,28 @@ class HERALDEnvironment:
     Attributes:
         protein_name (str): Name of the target whey protein.
         protein_sequence (str): Amino acid sequence of the target protein.
+        protein_accession (str): UniProt accession ID of the target protein.
         model: Pretrained ESM-2 model for sequence embedding.
         alphabet: ESM-2 alphabet object used for tokenization.
         clf: Fitted logistic regression AMP classifier.
         action_space (list): List of enzyme combinations available to the agent.
-        ph (float): Hydrolysis pH — fixed for now, part of action space later.
-        temperature (float): Hydrolysis temperature in Celsius — fixed for now.
+        ph (float): Hydrolysis pH.
+        temperature (float): Hydrolysis temperature in Celsius.
         tried_combinations (list): History of enzyme combinations tried this episode.
         rewards_history (list): History of rewards received this episode.
         current_step (int): Number of steps taken in the current episode.
         max_steps (int): Maximum steps per episode before termination.
     """
 
-    def __init__(self, protein_name, protein_sequence, model, alphabet, clf):
+    def __init__(
+        self, protein_name, protein_sequence, protein_accession, model, alphabet, clf
+    ):
         """
         Initialize the HERALD RL environment.
         Args:
             protein_name (str): Name of the target whey protein.
             protein_sequence (str): Amino acid sequence of the target protein.
+            protein_accession (str): UniProt accession ID (e.g. 'P24627').
             model: Pretrained ESM-2 model for sequence embedding.
             alphabet: ESM-2 alphabet object used for tokenization.
             clf: Fitted logistic regression AMP classifier.
@@ -58,6 +62,7 @@ class HERALDEnvironment:
         # fixed for the lifetime of this environment
         self.protein_name = protein_name
         self.protein_sequence = protein_sequence
+        self.protein_accession = protein_accession
         self.model = model
         self.alphabet = alphabet
         self.clf = clf
