@@ -113,72 +113,71 @@ class HERALDEnvironment:
             "max_steps": self.max_steps,
         }
 
+    def step(self, action):
+        """
+        Execute one step in the environment by applying an enzyme combination.
+        The agent selects an action index corresponding to an enzyme combination
+        in the action space. The environment simulates sequential digestion of
+        the target protein, scores the resulting peptides using the ESM-2 AMP
+        classifier, and returns a weighted reward combining average and maximum
+        AMP probability.
+        The reward formula is:
+            reward = 0.4 * avg_probability + 0.6 * max_probability
+        This weights the best peptide produced more heavily than the average,
+        rewarding combinations that generate at least one strong AMP candidate
+        while still valuing overall combination quality.
+        Args:
+            action (int): Index into action_space selecting an enzyme combination.
+        Returns:
+            tuple: (state, reward, done) where:
+                state (dict): Updated environment state after this step.
+                reward (float): AMP probability-based reward for this action.
+                done (bool): True if the episode has reached max_steps.
+        Raises:
+            ValueError: If action is outside the valid action space range.
+        """
+        if action < 0 or action >= len(self.action_space):
+            raise ValueError(
+                f"Invalid action {action}. "
+                f"Must be between 0 and {len(self.action_space) - 1}"
+            )
 
-def step(self, action):
-    """
-    Execute one step in the environment by applying an enzyme combination.
-    The agent selects an action index corresponding to an enzyme combination
-    in the action space. The environment simulates sequential digestion of
-    the target protein, scores the resulting peptides using the ESM-2 AMP
-    classifier, and returns a weighted reward combining average and maximum
-    AMP probability.
-    The reward formula is:
-        reward = 0.4 * avg_probability + 0.6 * max_probability
-    This weights the best peptide produced more heavily than the average,
-    rewarding combinations that generate at least one strong AMP candidate
-    while still valuing overall combination quality.
-    Args:
-        action (int): Index into action_space selecting an enzyme combination.
-    Returns:
-        tuple: (state, reward, done) where:
-            state (dict): Updated environment state after this step.
-            reward (float): AMP probability-based reward for this action.
-            done (bool): True if the episode has reached max_steps.
-    Raises:
-        ValueError: If action is outside the valid action space range.
-    """
-    if action < 0 or action >= len(self.action_space):
-        raise ValueError(
-            f"Invalid action {action}. "
-            f"Must be between 0 and {len(self.action_space) - 1}"
+        sequence = self.protein_sequence
+        enzyme_combination = self.action_space[action]["enzymes"]
+
+        # simulate enzymatic digestion with the selected combination
+        peptides = digest_sequential(
+            sequence, enzyme_combination, min_length=4, max_length=50
         )
 
-    sequence = self.protein_sequence
-    enzyme_combination = self.action_space[action]["enzymes"]
+        # calculate reward from AMP probabilities of resulting peptides
+        if len(peptides) == 0:
+            reward = 0.0
+        else:
+            probabilities = [
+                predict_amp(peptide, self.model, self.alphabet, self.clf)[1]
+                for peptide in peptides
+            ]
+            avg_probability = sum(probabilities) / len(probabilities)
+            max_probability = max(probabilities)
+            reward = 0.4 * avg_probability + 0.6 * max_probability
 
-    # simulate enzymatic digestion with the selected combination
-    peptides = digest_sequential(
-        sequence, enzyme_combination, min_length=4, max_length=50
-    )
+        # update episode history
+        self.tried_combinations.append(self.action_space[action])
+        self.rewards_history.append(reward)
+        self.current_step += 1
+        done = self.current_step >= self.max_steps
 
-    # calculate reward from AMP probabilities of resulting peptides
-    if len(peptides) == 0:
-        reward = 0.0
-    else:
-        probabilities = [
-            predict_amp(peptide, self.model, self.alphabet, self.clf)[1]
-            for peptide in peptides
-        ]
-        avg_probability = sum(probabilities) / len(probabilities)
-        max_probability = max(probabilities)
-        reward = 0.4 * avg_probability + 0.6 * max_probability
+        state = {
+            "protein_name": self.protein_name,
+            "action_space_size": len(self.action_space),
+            "tried_combinations": self.tried_combinations,
+            "rewards_history": self.rewards_history,
+            "current_step": self.current_step,
+            "max_steps": self.max_steps,
+        }
 
-    # update episode history
-    self.tried_combinations.append(self.action_space[action])
-    self.rewards_history.append(reward)
-    self.current_step += 1
-    done = self.current_step >= self.max_steps
-
-    state = {
-        "protein_name": self.protein_name,
-        "action_space_size": len(self.action_space),
-        "tried_combinations": self.tried_combinations,
-        "rewards_history": self.rewards_history,
-        "current_step": self.current_step,
-        "max_steps": self.max_steps,
-    }
-
-    return state, reward, done
+        return state, reward, done
 
     def render(self):
         """
