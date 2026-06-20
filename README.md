@@ -68,6 +68,8 @@ HERALD/
 
 │   └── training.py                 # RL training loop
 
+│   └── report.py                   # human-readable output
+
 ├── notebooks/
 
 │   ├── 01_digestion_exploration.ipynb     # single protein-enzyme walkthrough
@@ -211,8 +213,12 @@ for lactoferrin hydrolysis after 100 training episodes.
 |---|---|
 | Trypsin | 0.857 ← recommended |
 | Chymotrypsin | 0.846 |
-| Trypsin → Chymotrypsin | 0.822 |
-| Chymotrypsin → Trypsin | 0.822 |
+| Pepsin | 0.838 |
+| Pepsin → Trypsin | 0.826 |
+| Bromelain | 0.773 |
+| Alcalase | 0.760 |
+| Papain | 0.704 |
+| Alcalase → Papain | 0.693 |
 
 **Priority candidates for wet lab validation:**
 
@@ -229,15 +235,8 @@ by rule-based scoring, ML screening, and RL optimization.
 
 ## Known Limitations
 
-- Negative training examples are randomly generated peptide sequences rather
-  than experimentally validated non-AMP peptides. This is a common baseline
-  approach in AMP classification literature and will be refined in future versions.
-- Experimental conditions (pH, temperature) are stored in enzyme definitions
-  but not yet incorporated into digestion simulation. Kinetic modeling of
-  condition-dependent activity is planned.
-- The RL agent currently uses ESM-2 AMP probability as a proxy reward signal.
-  Wet lab MIC values will replace this signal in the next iteration to close
-  the computational-experimental loop.
+- Negative training examples are randomly generated peptide sequences rather than experimentally validated non-AMP peptides. This is a common baseline approach in AMP classification literature and will be refined in future versions.
+- The RL agent uses pH and temperature optimal conditions from the BRENDA enzyme database as fixed parameters. Kinetic modeling of condition-dependent activity as a function of deviation from optimum is planned.
 - Wet lab validation of computational predictions is ongoing.
 
 ---
@@ -251,11 +250,14 @@ by rule-based scoring, ML screening, and RL optimization.
 - [x] ESM-2 embedding and classifier (97% accuracy, ROC-AUC 0.996)
 - [x] ML-based screening pipeline
 - [x] Reinforcement learning optimization loop
-- [ ] pH and temperature activity modeling
-- [ ] Wet lab validation and model recalibration
-- [ ] Expanded enzyme library (alcalase, neutrase, pepsin, papain)
+- [x] pH and temperature in action space
+- [x] Expanded enzyme library (trypsin, chymotrypsin, alcalase, pepsin, papain, bromelain)
+- [x] Clean output report for wet lab collaborators
+- [ ] pH and temperature activity modeling (PINN-based kinetic constraints)
+- [ ] Wet lab validation and model recalibration with experimental MIC values
 - [ ] UniProt-derived negative examples for classifier retraining
-- [ ] LLM policy upgrade for RL agent (Level 2)
+- [ ] LLM policy upgrade for RL agent (Level 2 — language model as policy)
+- [ ] Additional whey proteins and enzyme combinations
 - [ ] bioRxiv preprint
 
 ---
@@ -264,7 +266,7 @@ by rule-based scoring, ML screening, and RL optimization.
 
 If you use HERALD in your research, please cite: 
 
-Buecherl, L. (2025). HERALD: Hydrolysis-guided Enzymatic Reinforcement for AMP Learning and Discovery. bioRxiv. [preprint — forthcoming]
+Buecherl, L. (2026). HERALD: Hydrolysis-guided Enzymatic Reinforcement for AMP Learning and Discovery. bioRxiv. [preprint — forthcoming]
 
 ---
 
