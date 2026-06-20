@@ -39,7 +39,7 @@ ENZYME_RULES = {
         "not_before": [],
         "ph_optimum": 8.0,
         "temp_optimum_celsius": 55,
-        "source": "Bacillus licheniformis",
+        "source": "bacillus licheniformis",
         "food_grade": True,
     },
     "papain": {
@@ -47,7 +47,7 @@ ENZYME_RULES = {
         "not_before": [],
         "ph_optimum": 6.5,
         "temp_optimum_celsius": 60,
-        "source": "Carica papaya",
+        "source": "carica papaya",
         "food_grade": True,
     },
     "bromelain": {
@@ -55,7 +55,14 @@ ENZYME_RULES = {
         "not_before": [],
         "ph_optimum": 7.0,
         "temp_optimum_celsius": 50,
-        "source": "Ananas comosus",
+        "source": "ananas comosus",
+        "food_grade": True,
+    },
+    "pepsin": {
+        "cleaves_before": ["F", "L", "W", "Y"],
+        "ph_optimum": 2.0,
+        "temp_optimum_celsius": 37,
+        "source": "porcine stomach",
         "food_grade": True,
     },
 }
