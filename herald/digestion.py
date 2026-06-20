@@ -13,13 +13,11 @@ from herald.enzymes import ENZYME_RULES
 def digest_sequence(sequence, enzyme_name, min_length=4, max_length=50):
     """
     Simulate enzymatic digestion of a protein sequence.
-
     Args:
         sequence (str): Protein amino acid sequence.
         enzyme_name (str): Name of enzyme in ENZYME_RULES.
         min_length (int): Minimum peptide length to keep.
         max_length (int): Maximum peptide length to keep.
-
     Returns:
         list: Peptide fragments produced by the simulated digestion.
     """
@@ -35,8 +33,12 @@ def digest_sequence(sequence, enzyme_name, min_length=4, max_length=50):
         current_aa = sequence[i]
         next_aa = sequence[i + 1]
 
-        if current_aa in rules["cleaves_after"] and next_aa not in rules["not_before"]:
+        if current_aa in rules.get("cleaves_after", []) and next_aa not in rules.get(
+            "not_before", []
+        ):
             cut_sites.append(i + 1)
+        elif current_aa in rules.get("cleaves_before", []):
+            cut_sites.append(i)
 
     cut_sites = [0] + cut_sites + [len(sequence)]
 
