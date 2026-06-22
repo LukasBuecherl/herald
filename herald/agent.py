@@ -3,7 +3,7 @@ agent.py — Epsilon-greedy reinforcement learning agent for HERALD.
 Defines the EpsilonGreedyAgent class, a multi-armed bandit agent that learns
 which enzyme combinations produce the highest AMP probability peptides through
 iterative interaction with the HERALDEnvironment.
-The agent uses an epsilon-greedy exploration strategy — balancing random
+The agent uses an epsilon-greedy exploration strategy, balancing random
 exploration of untried enzyme combinations with exploitation of the best
 known combination. Epsilon decays over time, shifting the agent from
 exploration toward exploitation as it accumulates experience.
@@ -102,7 +102,7 @@ class EpsilonGreedyAgent:
     def best_action(self):
         """
         Return the action with the highest estimated value after training.
-        This is the agent's final recommendation — the enzyme combination
+        The agent's final recommendation is the enzyme combination
         it believes produces the highest AMP probability peptides based on
         accumulated experience. Called after training is complete to extract
         the learned optimal policy.
