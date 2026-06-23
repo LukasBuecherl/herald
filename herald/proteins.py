@@ -65,7 +65,7 @@ def protein_sequence(acc_id):
 
 WHEY_PROTEINS = {
     "beta-lactoglobulin": "P02754",
-    "alpha-lactalbumin": "P00709",
+    "alpha-lactalbumin": "P00711",
     "lactoferrin": "P24627",
     "BSA": "P02769",
 }

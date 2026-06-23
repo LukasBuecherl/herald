@@ -201,8 +201,8 @@ Evaluated on a held-out test set of 7,180 sequences (80/20 train/test split).
 |---|---|---|---|
 | Lactoferrin | Trypsin | LFVPALLSLGALGLCLAAPR | 0.9997 |
 | Lactoferrin | Chymotrypsin | AVAVVKKANEGL | 0.9987 |
-| Alpha-lactalbumin | Trypsin | FFVPLFLVGILFPAILAK | 0.9982 |
-| BSA | Trypsin | GACLLPK | 0.9935 |
+| BSA | Bromelain | TFISLLLLFSSA | 0.9960 |
+| Alpha-lactalbumin | Bromelain | SLLLV | 0.9955 |
 
 **RL Optimization — Agent recommendation (notebook 04):**
 
