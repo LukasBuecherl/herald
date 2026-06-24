@@ -146,3 +146,56 @@ def build_amp_database():
     output_path = os.path.join(DATA_DIR_PROCESSED, "amp_database.csv")
     amp_database.to_csv(output_path, index=False)
     return amp_database
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("HERALD — databases.py self-test")
+    print("=" * 60)
+
+    amp_db = build_amp_database()
+
+    print(f"\nDatabase summary:")
+    print(f"  Total sequences : {len(amp_db)}")
+    print(f"\nSource breakdown:")
+    print(amp_db["source"].value_counts().to_string())
+
+    print(f"\nSequence length statistics:")
+    lengths = amp_db["sequence"].str.len()
+    print(f"  Min    : {lengths.min()}")
+    print(f"  Max    : {lengths.max()}")
+    print(f"  Mean   : {lengths.mean():.1f}")
+    print(f"  Median : {lengths.median():.0f}")
+    print(f"  Std    : {lengths.std():.1f}")
+
+    print(f"\nFirst 5 sequences:")
+    print(amp_db.head().to_string(index=False))
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.3):")
+    print("  Expected total      : 17,897")
+    print("  Expected DBAASP     : 16,772")
+    print("  Expected APD6       : 1,125")
+    print("  Expected length mean: 21.3 aa")
+    print("  Expected length min : 4 aa")
+    print("  Expected length max : 190 aa")
+    print("=" * 60)
+
+    total_ok = len(amp_db) == 17897
+    dbaasp_ok = (amp_db["source"].value_counts().get("DBAASP", 0)) == 16772
+    apd6_ok = (amp_db["source"].value_counts().get("APD6", 0)) == 1125
+
+    if total_ok and dbaasp_ok and apd6_ok:
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
+        if not total_ok:
+            print(f"  Total mismatch: got {len(amp_db)}, expected 17,897")
+        if not dbaasp_ok:
+            print(
+                f"  DBAASP mismatch: got {amp_db['source'].value_counts().get('DBAASP', 0)}, expected 16,772"
+            )
+        if not apd6_ok:
+            print(
+                f"  APD6 mismatch: got {amp_db['source'].value_counts().get('APD6', 0)}, expected 1,125"
+            )
