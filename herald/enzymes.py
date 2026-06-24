@@ -78,3 +78,39 @@ def get_conditions(enzyme_names):
         ph = [ENZYME_RULES[e]["ph_optimum"] for e in enzyme_names]
         temp = [ENZYME_RULES[e]["temp_optimum_celsius"] for e in enzyme_names]
         return ph, temp
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("HERALD — enzymes.py self-test")
+    print("=" * 60)
+
+    print(f"\nTotal enzymes defined: {len(ENZYME_RULES)}")
+    print(f"Expected: 6\n")
+
+    for name, rules in ENZYME_RULES.items():
+        print(f"{name}")
+        print(f"  Cleaves after  : {rules.get('cleaves_after', 'N/A')}")
+        print(f"  Cleaves before : {rules.get('cleaves_before', 'N/A')}")
+        print(f"  Not before     : {rules.get('not_before', 'N/A')}")
+        print(f"  pH optimum     : {rules['ph_optimum']}")
+        print(f"  Temp optimum   : {rules['temp_optimum_celsius']} °C")
+        print(f"  Food grade     : {rules['food_grade']}")
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.2):")
+    print("  Expected enzymes: trypsin, chymotrypsin, alcalase,")
+    print("                    papain, bromelain, pepsin")
+    print("  Trypsin cleaves after  : K, R (not before P)")
+    print("  Chymotrypsin cleaves after: F, Y, W, L (not before P)")
+    print("  Pepsin cleaves before  : F, L, W, Y")
+    print("=" * 60)
+
+    expected = ["trypsin", "chymotrypsin", "alcalase", "papain", "bromelain", "pepsin"]
+    all_present = all(e in ENZYME_RULES for e in expected)
+    all_food_grade = all(ENZYME_RULES[e]["food_grade"] for e in expected)
+
+    if all_present and all_food_grade:
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
