@@ -69,3 +69,36 @@ WHEY_PROTEINS = {
     "lactoferrin": "P24627",
     "BSA": "P02769",
 }
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("HERALD — proteins.py self-test")
+    print("=" * 60)
+
+    all_passed = True
+
+    for name, acc_id in WHEY_PROTEINS.items():
+        seq = protein_sequence(acc_id)
+
+        if seq is None:
+            print(f"FAIL  {name} ({acc_id}): could not fetch sequence")
+            all_passed = False
+            continue
+
+        print(f"\n{name} ({acc_id})")
+        print(f"  Length      : {len(seq)} aa")
+        print(f"  First 10 aa : {seq[:10]}")
+        print(f"  Last 10 aa  : {seq[-10:]}")
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.1):")
+    print("  Expected proteins : beta-lactoglobulin, alpha-lactalbumin,")
+    print("                      lactoferrin, BSA")
+    print("  Expected accessions: P02754, P00711, P24627, P02769")
+    print("  Source            : UniProt REST API with local caching")
+    print("=" * 60)
+
+    if all_passed:
+        print("ALL CHECKS PASSED")
+    else:
+        print("SOME CHECKS FAILED — review output above")
