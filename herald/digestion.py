@@ -7,7 +7,10 @@ sequence would be cut into peptide fragments by a selected protease.
 
 from sys import _current_frames
 
-from herald.enzymes import ENZYME_RULES
+try:
+    from herald.enzymes import ENZYME_RULES
+except ModuleNotFoundError:
+    from enzymes import ENZYME_RULES
 
 
 def digest_sequence(sequence, enzyme_name, min_length=4, max_length=50):
@@ -81,3 +84,73 @@ def digest_sequential(sequence, enzyme_combination, min_length=4, max_length=50)
         current_fragments = next_fragments
 
     return [p for p in current_fragments if min_length <= len(p) <= max_length]
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    try:
+        from herald.enzymes import ENZYME_RULES
+        from herald.proteins import WHEY_PROTEINS, protein_sequence
+    except ModuleNotFoundError:
+        from enzymes import ENZYME_RULES
+        from proteins import WHEY_PROTEINS, protein_sequence
+
+    print("=" * 60)
+    print("HERALD — digestion.py self-test")
+    print("=" * 60)
+
+    enzymes = list(ENZYME_RULES.keys())
+    min_len, max_len = 4, 50
+
+    print(f"\nLength filter: {min_len}–{max_len} aa")
+    print(f"\n{'Protein':<22} {'Enzyme':<14} {'Peptides':>8}")
+    print("-" * 46)
+
+    results = {}
+    for protein_name, acc_id in WHEY_PROTEINS.items():
+        seq = protein_sequence(acc_id)
+        results[protein_name] = {}
+        for enzyme in enzymes:
+            peptides = digest_sequence(seq, enzyme, min_len, max_len)
+            results[protein_name][enzyme] = len(peptides)
+            print(f"{protein_name:<22} {enzyme:<14} {len(peptides):>8}")
+
+    print("\nSequential digestion test:")
+    seq = protein_sequence("P24627")  # lactoferrin
+    pep_pt = digest_sequential(seq, ["pepsin", "trypsin"], min_len, max_len)
+    pep_ap = digest_sequential(seq, ["alcalase", "papain"], min_len, max_len)
+    print(f"  Lactoferrin pepsin→trypsin   : {len(pep_pt)} peptides")
+    print(f"  Lactoferrin alcalase→papain  : {len(pep_ap)} peptides")
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.2 / Table 2):")
+    print("  Lactoferrin + trypsin      : expected 58 peptides")
+    print("  Lactoferrin + chymotrypsin : expected 67 peptides")
+    print("  Lactoferrin + pepsin       : expected 67 peptides")
+    print("  BSA + trypsin              : expected 62 peptides")
+    print("=" * 60)
+
+    checks = {
+        ("lactoferrin", "trypsin"): 58,
+        ("lactoferrin", "chymotrypsin"): 67,
+        ("lactoferrin", "pepsin"): 67,
+        ("BSA", "trypsin"): 62,
+    }
+
+    all_passed = True
+    for (protein, enzyme), expected in checks.items():
+        got = results[protein][enzyme]
+        status = "Y" if got == expected else "N"
+        print(f"  {status} {protein} + {enzyme}: got {got}, expected {expected}")
+        if got != expected:
+            all_passed = False
+
+    print()
+    if all_passed:
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
