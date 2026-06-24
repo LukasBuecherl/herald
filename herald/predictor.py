@@ -201,6 +201,11 @@ if __name__ == "__main__":
     print("Computing test embeddings...")
     X_test_emb = compute_esm2_embeddings(X_test.tolist(), model, alphabet)
 
+    np.save(os.path.join(DATA_DIR_PROCESSED, "X_test_emb.npy"), X_test_emb)
+    np.save(os.path.join(DATA_DIR_PROCESSED, "y_test.npy"), y_test.to_numpy())
+    np.save(os.path.join(DATA_DIR_PROCESSED, "X_train_emb.npy"), X_train_emb)
+    np.save(os.path.join(DATA_DIR_PROCESSED, "y_train.npy"), y_train.to_numpy())
+
     # train
     print("Training classifier...")
     clf = train_classifier(X_train_emb, y_train)
