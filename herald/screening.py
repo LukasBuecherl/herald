@@ -13,10 +13,16 @@ experimental validation.
 
 import pandas as pd
 
-from herald.digestion import digest_sequence
-from herald.enzymes import ENZYME_RULES
-from herald.proteins import WHEY_PROTEINS, protein_sequence
-from herald.scoring import peptide_features, peptide_features_ml
+try:
+    from herald.digestion import digest_sequence
+    from herald.enzymes import ENZYME_RULES
+    from herald.proteins import WHEY_PROTEINS, protein_sequence
+    from herald.scoring import peptide_features, peptide_features_ml
+except ModuleNotFoundError:
+    from digestion import digest_sequence
+    from enzymes import ENZYME_RULES
+    from proteins import WHEY_PROTEINS, protein_sequence
+    from scoring import peptide_features, peptide_features_ml
 
 
 def screen_combinations(
@@ -167,3 +173,85 @@ def screen_combinations_ml(
             )
 
     return pd.DataFrame(results)
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    try:
+        from herald.enzymes import ENZYME_RULES
+        from herald.proteins import WHEY_PROTEINS
+    except ModuleNotFoundError:
+        from enzymes import ENZYME_RULES
+        from proteins import WHEY_PROTEINS
+
+    print("=" * 60)
+    print("HERALD — screening.py self-test (rule-based only)")
+    print("=" * 60)
+
+    df = screen_combinations()
+
+    print(f"\nTotal combinations screened: {len(df)}")
+    print(f"Expected: 24 (4 proteins x 6 enzymes)\n")
+
+    print(
+        f"{'Protein':<22} {'Enzyme':<14} {'Peptides':>8} {'MaxScore':>9} {'>=4':>5} {'>=3':>5} {'Avg':>6}"
+    )
+    print("-" * 70)
+    for _, row in df.iterrows():
+        print(
+            f"{row['protein']:<22} {row['enzyme']:<14} "
+            f"{row['num_peptides']:>8} {row['max_score']:>9} "
+            f"{row['num_score_ge_4']:>5} {row['num_score_ge_3']:>5} "
+            f"{row['avg_score']:>6.2f}"
+        )
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Table 2):")
+    print(
+        "  Lactoferrin + trypsin      : expected 58 peptides, max 5, 9 >=4, 34 >=3, avg 2.47"
+    )
+    print(
+        "  Lactoferrin + chymotrypsin : expected 67 peptides, max 5, 7 >=4, 26 >=3, avg 2.13"
+    )
+    print(
+        "  Alpha-lactalbumin + trypsin: expected 10 peptides, max 5, 2 >=4,  5 >=3, avg 2.50"
+    )
+    print("=" * 60)
+
+    checks = [
+        ("lactoferrin", "trypsin", 58, 5, 9, 34, 2.47),
+        ("lactoferrin", "chymotrypsin", 67, 5, 7, 26, 2.13),
+        ("alpha-lactalbumin", "trypsin", 10, 5, 2, 5, 2.50),
+    ]
+
+    all_passed = True
+    for protein, enzyme, exp_pep, exp_max, exp_ge4, exp_ge3, exp_avg in checks:
+        row = df[(df["protein"] == protein) & (df["enzyme"] == enzyme)].iloc[0]
+        ok = (
+            row["num_peptides"] == exp_pep
+            and row["max_score"] == exp_max
+            and row["num_score_ge_4"] == exp_ge4
+            and row["num_score_ge_3"] == exp_ge3
+            and abs(row["avg_score"] - exp_avg) < 0.01
+        )
+        status = "✅" if ok else "❌"
+        print(
+            f"  {status} {protein} + {enzyme}: "
+            f"got {row['num_peptides']} peptides, "
+            f"max {row['max_score']}, "
+            f"{row['num_score_ge_4']} >=4, "
+            f"{row['num_score_ge_3']} >=3, "
+            f"avg {row['avg_score']:.2f}"
+        )
+        if not ok:
+            all_passed = False
+
+    print()
+    if all_passed:
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
