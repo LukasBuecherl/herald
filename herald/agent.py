@@ -125,3 +125,72 @@ class EpsilonGreedyAgent:
                 f"count={int(self.action_counts[i])}"
             )
         print(f"Best action: {self.best_action()}")
+
+
+if __name__ == "__main__":
+    import numpy as np
+
+    print("=" * 60)
+    print("HERALD — agent.py self-test")
+    print("=" * 60)
+
+    # initialize agent with 8 actions matching manuscript
+    agent = EpsilonGreedyAgent(
+        n_actions=8, epsilon=1.0, epsilon_min=0.1, epsilon_decay=0.995
+    )
+
+    print(f"\nInitial state:")
+    print(f"  n_actions     : {agent.n_actions} (expected 8)")
+    print(f"  epsilon       : {agent.epsilon:.3f} (expected 1.000)")
+    print(f"  epsilon_min   : {agent.epsilon_min:.3f} (expected 0.100)")
+    print(f"  epsilon_decay : {agent.epsilon_decay:.3f} (expected 0.995)")
+    print(f"  action_values : {agent.action_values} (expected all zeros)")
+    print(f"  action_counts : {agent.action_counts} (expected all zeros)")
+
+    # simulate feeding known rewards to check update rule
+    print(f"\nSimulating updates with known rewards...")
+    agent_test = EpsilonGreedyAgent(
+        n_actions=8, epsilon=1.0, epsilon_min=0.1, epsilon_decay=0.995
+    )
+
+    # feed trypsin (action 0) reward matching manuscript value 0.857
+    for _ in range(100):
+        agent_test.update(0, 0.857)
+
+    # feed chymotrypsin (action 1) reward matching manuscript value 0.846
+    for _ in range(100):
+        agent_test.update(1, 0.846)
+
+    print(
+        f"  Action 0 (trypsin) value      : {agent_test.action_values[0]:.3f} (expected ~0.857)"
+    )
+    print(
+        f"  Action 1 (chymotrypsin) value : {agent_test.action_values[1]:.3f} (expected ~0.846)"
+    )
+    print(f"  Best action                   : {agent_test.best_action()} (expected 0)")
+    print(
+        f"  Final epsilon                 : {agent_test.epsilon:.3f} (expected 0.100)"
+    )
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.6):")
+    print("  n_actions     : 8")
+    print("  epsilon init  : 1.0")
+    print("  epsilon_min   : 0.1")
+    print("  epsilon_decay : 0.995")
+    print("  Best action   : trypsin (index 0)")
+    print("=" * 60)
+
+    checks = [
+        agent.n_actions == 8,
+        agent.epsilon == 1.0,
+        agent.epsilon_min == 0.1,
+        agent.epsilon_decay == 0.995,
+        agent_test.best_action() == 0,
+        abs(agent_test.action_values[0] - 0.857) < 0.001,
+    ]
+
+    if all(checks):
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
