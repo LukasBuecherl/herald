@@ -26,7 +26,10 @@ hydrophobicity scales, curated AMP database models, external peptide-property
 prediction tools, and experimental validation.
 """
 
-from herald.predictor import predict_amp
+try:
+    from herald.predictor import predict_amp
+except ModuleNotFoundError:
+    from predictor import predict_amp
 
 POSITIVE_RESIDUES = {"K", "R", "H"}
 NEGATIVE_RESIDUES = {"D", "E"}
@@ -158,3 +161,49 @@ def peptide_features_ml(peptide, model, alphabet, clf):
     features["amp_probability"] = prob_pred[1]
     features["amp_prediction"] = prob_pred[0]
     return features
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("HERALD — scoring.py self-test")
+    print("=" * 60)
+
+    # known AMP from manuscript — top rule-based lactoferrin+trypsin peptide
+    test_peptides = [
+        ("QVLLHQQALFGK", "top rule-based, lactoferrin+trypsin, expected score 5"),
+        ("LFVPALLSLGALGLCLAAPR", "top ML peptide, lactoferrin+trypsin"),
+        ("DSALGFLR", "RL-only candidate, lactoferrin+trypsin"),
+        ("AAAA", "short low-score control"),
+    ]
+
+    print(
+        f"\n{'Peptide':<25} {'Len':>4} {'Charge':>7} {'Hydro':>7} {'Arom':>6} {'Score':>6}"
+    )
+    print("-" * 60)
+
+    for peptide, description in test_peptides:
+        features = peptide_features(peptide)
+        print(
+            f"{peptide:<25} "
+            f"{features['length']:>4} "
+            f"{features['net_charge']:>7} "
+            f"{features['hydrophobic_fraction']:>7.2f} "
+            f"{features['aromatic_fraction']:>6.2f} "
+            f"{features['simple_amp_score']:>6}"
+        )
+        print(f"  ({description})")
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.5 / Table 2):")
+    print("  QVLLHQQALFGK : expected score 5 (top rule-based peptide)")
+    print("  Score components: length 8-30, charge>=1, charge>=2,")
+    print("                    hydrophobicity 0.3-0.7, aromaticity>0")
+    print("=" * 60)
+
+    expected_score = 5
+    got_score = peptide_features("QVLLHQQALFGK")["simple_amp_score"]
+
+    if got_score == expected_score:
+        print(f"ALL CHECKS PASSED — QVLLHQQALFGK scored {got_score} as expected")
+    else:
+        print(f"MISMATCH — QVLLHQQALFGK scored {got_score}, expected {expected_score}")

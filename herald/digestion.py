@@ -80,7 +80,9 @@ def digest_sequential(sequence, enzyme_combination, min_length=4, max_length=50)
     for enzyme_name in enzyme_combination:
         next_fragments = []
         for fragment in current_fragments:
-            next_fragments.extend(digest_sequence(fragment, enzyme_name, 1, max_length))
+            next_fragments.extend(
+                digest_sequence(fragment, enzyme_name, 1, len(sequence))
+            )
         current_fragments = next_fragments
 
     return [p for p in current_fragments if min_length <= len(p) <= max_length]
