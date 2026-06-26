@@ -13,9 +13,14 @@ proxy for experimental antimicrobial activity. In future iterations, wet lab
 MIC values will be incorporated to recalibrate the reward function.
 """
 
-from herald.digestion import digest_sequential
-from herald.enzymes import get_conditions
-from herald.predictor import predict_amp
+try:
+    from herald.digestion import digest_sequential
+    from herald.enzymes import get_conditions
+    from herald.predictor import predict_amp
+except ModuleNotFoundError:
+    from digestion import digest_sequential
+    from enzymes import get_conditions
+    from predictor import predict_amp
 
 
 class HERALDEnvironment:
@@ -202,3 +207,79 @@ class HERALDEnvironment:
         )
         print(f"Best reward so far: {max(self.rewards_history):.3f}")
         print(f"All rewards: {[round(r, 3) for r in self.rewards_history]}")
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    try:
+        from herald.proteins import WHEY_PROTEINS, protein_sequence
+    except ModuleNotFoundError:
+        from proteins import WHEY_PROTEINS, protein_sequence
+
+    print("=" * 60)
+    print("HERALD — environment.py self-test (no ESM-2)")
+    print("=" * 60)
+
+    # check action space without loading ESM-2
+    # mock minimal objects to instantiate environment structure only
+    class MockModel:
+        pass
+
+    class MockAlphabet:
+        pass
+
+    class MockClf:
+        pass
+
+    seq = protein_sequence("P24627")  # lactoferrin
+    env = HERALDEnvironment(
+        protein_name="lactoferrin",
+        protein_sequence=seq,
+        protein_accession="P24627",
+        model=MockModel(),
+        alphabet=MockAlphabet(),
+        clf=MockClf(),
+    )
+
+    print(f"\nAction space size : {len(env.action_space)} (expected 8)")
+    print(f"Protein name      : {env.protein_name} (expected lactoferrin)")
+    print(f"Protein accession : {env.protein_accession} (expected P24627)")
+    print(f"Max steps         : {env.max_steps} (expected 24)")
+    print(f"\nAction space:")
+    for i, action in enumerate(env.action_space):
+        print(f"  {i}: {action['label']:<25} pH {action['ph']}  {action['temp']}°C")
+
+    expected_labels = [
+        "trypsin",
+        "chymotrypsin",
+        "alcalase",
+        "papain",
+        "bromelain",
+        "pepsin",
+        "pepsin → trypsin",
+        "alcalase → papain",
+    ]
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript (Section 2.6):")
+    print("  Expected 8 actions including 2 sequential combinations")
+    print("  pepsin → trypsin and alcalase → papain")
+    print("=" * 60)
+
+    state = env.reset()
+    checks = [
+        len(env.action_space) == 8,
+        env.protein_name == "lactoferrin",
+        env.protein_accession == "P24627",
+        env.max_steps == 24,
+        all(env.action_space[i]["label"] == expected_labels[i] for i in range(8)),
+    ]
+
+    if all(checks):
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
