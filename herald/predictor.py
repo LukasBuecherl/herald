@@ -53,10 +53,6 @@ def generate_negative_samples(amp_df, n_samples):
     return df_neg
 
 
-amp_df = pd.read_csv(os.path.join(DATA_DIR_PROCESSED, "amp_database.csv"))
-print(generate_negative_samples(amp_df, 5))
-
-
 def prepare_dataset(amp_df, n_samples):
     """
     Prepare a dataset by generating negative samples and combining with AMP data.
@@ -188,6 +184,7 @@ if __name__ == "__main__":
 
     # load data
     amp_df = pd.read_csv(os.path.join(DATA_DIR_PROCESSED, "amp_database.csv"))
+    print(generate_negative_samples(amp_df, 5))
 
     # prepare dataset
     X_train, X_test, y_train, y_test = prepare_dataset(amp_df, n_samples=18000)
