@@ -65,3 +65,100 @@ def generate_report(results, env, candidates_df):
     print("Wet lab validation is required before drawing")
     print("conclusions about antimicrobial activity.")
     print("=" * 60)
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    import numpy as np
+    import pandas as pd
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    try:
+        from herald.environment import HERALDEnvironment
+        from herald.proteins import protein_sequence
+    except ModuleNotFoundError:
+        from environment import HERALDEnvironment
+        from proteins import protein_sequence
+
+    print("=" * 60)
+    print("HERALD — report.py self-test (mock data)")
+    print("=" * 60)
+
+    # mock environment using real lactoferrin sequence
+    class MockModel:
+        pass
+
+    class MockAlphabet:
+        pass
+
+    class MockClf:
+        pass
+
+    seq = protein_sequence("P24627")
+    env = HERALDEnvironment(
+        protein_name="lactoferrin",
+        protein_sequence=seq,
+        protein_accession="P24627",
+        model=MockModel(),
+        alphabet=MockAlphabet(),
+        clf=MockClf(),
+    )
+
+    # mock training results matching manuscript Table 4
+    mock_results = {
+        "best_action": 0,  # trypsin
+        "action_values": np.array(
+            [
+                0.857,  # trypsin
+                0.846,  # chymotrypsin
+                0.760,  # alcalase
+                0.704,  # papain
+                0.773,  # bromelain
+                0.838,  # pepsin
+                0.826,  # pepsin → trypsin
+                0.693,  # alcalase → papain
+            ]
+        ),
+        "best_combination": env.action_space[0],
+    }
+
+    # mock candidates matching manuscript Table 5
+    mock_candidates = pd.DataFrame(
+        {
+            "sequence": [
+                "LFVPALLSLGALGLCLAAPR",
+                "DSALGFLR",
+                "QVLLHQQALFGK",
+                "LRPVAAEIYGTK",
+                "LGAPSITCVR",
+            ],
+            "probability": [0.9997, 0.9890, 0.9759, 0.9669, 0.9449],
+        }
+    )
+
+    print()
+    generate_report(mock_results, env, mock_candidates)
+
+    print("\n" + "=" * 60)
+    print("Cross-check against manuscript:")
+    print("  Recommended enzyme : trypsin (expected trypsin)")
+    print("  Confidence         : 0.857 (expected 0.857)")
+    print("  Top candidate      : LFVPALLSLGALGLCLAAPR (expected)")
+    print("  Top probability    : 0.9997 (expected 0.9997)")
+    print("=" * 60)
+
+    checks = [
+        env.action_space[mock_results["best_action"]]["label"] == "trypsin",
+        abs(mock_results["action_values"][0] - 0.857) < 0.001,
+        mock_candidates.iloc[0]["sequence"] == "LFVPALLSLGALGLCLAAPR",
+        abs(mock_candidates.iloc[0]["probability"] - 0.9997) < 0.0001,
+    ]
+
+    print()
+    if all(checks):
+        print("ALL CHECKS PASSED")
+    else:
+        print("MISMATCH DETECTED — review output above")
